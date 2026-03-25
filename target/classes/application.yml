@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2MB
+      max-request-size: 10MB
+      location: D:/cxdownload/bishe/anime-shop/temp
+  datasource:
+    url: jdbc:mysql://localhost:3306/anime_shop?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 12345
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: localhost
+      database: 0
+      port: 6379
+  jackson:
+    deserialization:
+      # 核心：全局忽略未知字段，不再因字段名不匹配报错
+      fail-on-unknown-properties: false
+avatar:
+  local:
+    upload-path: D:/cxdownload/bishe/anime-shop/src/main/resources
+    access-path: /avatar/
+    server-url: http://localhost:8080
+product:
+  local:
+    upload-path: D:/cxdownload/bishe/anime-shop/upload/
+    access-path: /upload/
+    server-url: http://localhost:8080
+web:
+  resources:
+    static-locations: file:./upload/,classpath:/static/
+    add-mappings: true
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.anime.shop.entity
+logging:
+  level:
+    com.anime.shop: debug
