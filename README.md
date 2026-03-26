@@ -52,7 +52,7 @@ https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?
 
 然后是启动Redis,我是自己手动启动的,后端我学的不多,有啥更好的启动方法可以和我说说
 
-[![1774490932481](C:\Users\Asuna\AppData\Local\Temp\1774490932481.png)](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/2.png?raw=true)
+[![数据库字符集](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/2.png?raw=true)]
 
 
 
