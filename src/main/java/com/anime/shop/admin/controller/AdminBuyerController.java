@@ -23,14 +23,12 @@ public class AdminBuyerController {
 
     @GetMapping("/list")
     public Result<List<BuyerVO>> getBuyerList(
-            @RequestParam(required = false) Integer auditStatus // 非必填，不传返回全部
+            @RequestParam(required = false) Integer auditStatus
     ) {
         List<BuyerVO> list;
         if (auditStatus == null) {
-            // 不传状态 → 返回全部
             list = buyerInfoService.getAllBuyerList();
         } else {
-            // 传状态 → 返回对应状态数据
             list = buyerInfoService.getBuyerListByStatus(auditStatus);
         }
         return Result.success(list);

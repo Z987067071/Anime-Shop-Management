@@ -20,5 +20,5 @@ public class ProductQueryDTO {
     private String tag;
     /** 商品类型 0-普通商品 1-漫展虚拟商品*/
     private Integer productType;
-    private Integer isTicket; // 1=票务商品，0=普通商品，null=不筛选
+    private Integer isTicket; // 1=票务商品，0=普通商品
 }

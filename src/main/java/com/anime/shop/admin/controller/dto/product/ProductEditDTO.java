@@ -53,12 +53,10 @@ public class ProductEditDTO {
     /** 商品类型 0-普通商品 1-漫展虚拟商品*/
     private Integer productType;
 
-    private Integer isTicket; // 新增：是否为票务
-    private Long comicConId; // 新增：关联漫展ID
-    // 新增：票种SKU列表
+    private Integer isTicket;
+    private Long comicConId;
     private List<ProductSkuEntity> skuList;
 
-    // 图片DTO内部类（和新增DTO一致）
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ProductImageDTO {

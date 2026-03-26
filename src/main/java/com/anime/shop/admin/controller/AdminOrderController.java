@@ -17,10 +17,6 @@ import java.util.Map;
 @RequestMapping("/api/admin/order")
 @Validated // 开启参数校验
 public class AdminOrderController {
-
-    /**
-     * 注入后台订单管理Service
-     */
     @Resource
     private AdminOrderService adminOrderService;
 

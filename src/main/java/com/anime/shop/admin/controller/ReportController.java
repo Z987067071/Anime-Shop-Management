@@ -33,13 +33,10 @@ public class ReportController {
             @Validated @RequestBody ReportHandleDTO dto,
             @RequestHeader("token") String token) {
         try {
-            // 1. Token校验
             if (!jwtUtil.validateToken(token)) {
                 log.warn("处理举报失败：Token无效");
                 return Result.error(401, "登录状态失效，请重新登录！");
             }
-
-            // 2. 管理员权限校验
             String role = jwtUtil.getRoleFromToken(token);
             if (role == null || !"ADMIN".equals(role.toUpperCase())) {
                 log.warn("非管理员尝试处理举报，角色：{}", role);
@@ -64,13 +61,12 @@ public class ReportController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer id,
-            @RequestParam(required = false) Integer targetType, // 1=商品,2=商品评论,3=社区帖子,4=社区评论
-            @RequestParam(required = false) Integer status,     // 处理状态
+            @RequestParam(required = false) Integer targetType,
+            @RequestParam(required = false) Integer status,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime,
             @RequestHeader("token") String token) {
         try {
-            // 1. 权限校验
             if (!jwtUtil.validateToken(token)) {
                 return Result.error(401, "登录状态失效，请重新登录！");
             }
@@ -78,8 +74,6 @@ public class ReportController {
             if (role == null || !"ADMIN".equals(role.toUpperCase())) {
                 return Result.error(403, "无管理员权限！");
             }
-
-            // 2. 查询列表（直接返回结果，无isSuccess()）
             Result<Page<ProductReportEntity>> result = pReportService.getReportList(
                     pageNum, pageSize,id, targetType, status, startTime, endTime);
             return result;

@@ -138,7 +138,6 @@ public class AdminUserController {
             }
             Long userId = Long.parseLong(userIdStr);
 
-            // 2. 基础文件校验
             if (file.isEmpty()) {
                 return Result.build(ResultCode.PARAM_ERROR.getCode(), "请选择要上传的头像文件！", null);
             }
@@ -154,16 +153,13 @@ public class AdminUserController {
                 return Result.build(ResultCode.PARAM_ERROR.getCode(), "头像文件大小不能超过2MB！", null);
             }
 
-            // 3. 上传文件
             String avatarUrl = fileUploadUtil.uploadAvatar(file);
 
-            // 4. 调用更新头像（用ResultCode.SUCCESS判断，而非硬编码200）
             Result<String> updateResult = adminUserService.updateUserAvatar(userId, avatarUrl);
             if (updateResult.getCode() != ResultCode.SUCCESS.getCode()) {
                 return updateResult;
             }
 
-            // 5. 上传+更新成功
             return Result.ok(avatarUrl);
         } catch (NumberFormatException e) {
             return Result.build(ResultCode.PARAM_ERROR.getCode(), "用户ID格式错误，请传递数字！", null);

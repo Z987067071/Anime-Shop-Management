@@ -44,11 +44,10 @@ public class ProductVO {
     private List<ProductImageVO> imageList;
     /** 商品类型 0-普通商品 1-漫展虚拟商品 */
     private Integer productType;
-    private Integer isTicket; // 是否为票务
-    private Long comicConId; // 关联漫展ID
-    // 新增：票种SKU列表
+    private Integer isTicket;
+    private Long comicConId;
     private List<ProductSkuEntity> skuList;
-    private Integer sales; // 已售量
+    private Integer sales;
 
     @Data
     public static class ProductImageVO {

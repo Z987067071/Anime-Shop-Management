@@ -15,11 +15,11 @@ public interface OrderEntityMapper extends BaseMapper<OrderEntity> {
 
     /**
      * 分页查询订单列表（动态条件）
-     * 核心：用 @SelectProvider 替代 @Select，支持动态 SQL
+     * 用 @SelectProvider 替代 @Select，支持动态 SQL
      */
     @SelectProvider(
-            type = OrderSqlProvider.class, // 指定 SQL 构建器
-            method = "selectOrderPageSql"  // 指定构建方法
+            type = OrderSqlProvider.class,
+            method = "selectOrderPageSql"
     )
     IPage<OrderEntity> selectOrderPage(Page<OrderEntity> page, @Param("query") OrderQueryDTO query);
 

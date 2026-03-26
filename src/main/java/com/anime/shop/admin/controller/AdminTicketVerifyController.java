@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @Validated
 public class AdminTicketVerifyController {
 
-    // 注入重命名后的服务
     @Resource
     private AdminTicketVerifyService adminTicketVerifyService;
 

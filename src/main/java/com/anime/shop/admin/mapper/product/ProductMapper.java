@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface ProductMapper extends BaseMapper<ProductEntity> {
-    // 商品详情查询（核心方法）
+    // 商品详情查询
     @Select("SELECT " +
             "p.id, p.product_name, p.category_id, p.cover_img, p.price, p.original_price, p.remain_stock,p.total_stock, p.status, p.sort, p.tag,p.sales, " +
             "p.product_type, " +"p.product_type, p.is_ticket, p.comic_con_id, " +
@@ -23,7 +23,7 @@ public interface ProductMapper extends BaseMapper<ProductEntity> {
             "LEFT JOIN p_product_detail pd ON p.id = pd.product_id " +
             "WHERE p.id = #{id}")
     ProductVO selectProductDetailById(@Param("id") Long id);
-    // 分页查询（备用，非核心）
+    // 分页查询
     @Select("<script>" +
             "SELECT " +
             "p.id, p.product_name, p.category_id, c.category_name, " +

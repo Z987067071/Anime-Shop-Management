@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/comic-con") // 路径也加admin，和类名对应，更规范
+@RequestMapping("/api/admin/comic-con")
 public class AdminComicConController {
 
     @Autowired
@@ -21,23 +21,19 @@ public class AdminComicConController {
     @Autowired
     private ProductMapper productMapper;
 
-    // 新增漫展
     @PostMapping("/add")
-    @Transactional(rollbackFor = Exception.class) // 事务保证：新增漫展+更新商品原子操作
+    @Transactional(rollbackFor = Exception.class)
     public Result<String> addComicCon(@RequestBody ComicCon comicCon) {
         try {
-            // 1. 校验：漫展必须关联商品ID（product_id不能为空）
             if (comicCon.getProductId() == null || comicCon.getProductId() <= 0) {
                 return Result.fail("新增漫展失败：必须关联商品ID（product_id）");
             }
 
-            // 2. 新增漫展
             boolean save = adminComicConService.save(comicCon);
             if (!save) {
                 return Result.fail("新增漫展失败");
             }
 
-            // 3. 核心：自动将漫展ID回填到商品的comic_con_id字段
             boolean bindSuccess = adminComicConService.bindComicConIdToProduct(comicCon.getId(), comicCon.getProductId());
             if (!bindSuccess) {
                 return Result.fail("新增漫展成功，但绑定商品漫展ID失败（商品可能不存在）");
@@ -49,34 +45,28 @@ public class AdminComicConController {
         }
     }
 
-    // 修改漫展信息
     @PutMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
     public Result<String> updateComicCon(@PathVariable Long id, @RequestBody ComicCon comicCon) {
         try {
-            // 1. 查询原漫展信息
             ComicCon oldComicCon = adminComicConService.getById(id);
             if (oldComicCon == null) {
                 return Result.fail("漫展不存在");
             }
 
-            // 2. 更新漫展
             comicCon.setId(id);
             boolean update = adminComicConService.updateById(comicCon);
             if (!update) {
                 return Result.fail("修改漫展失败");
             }
 
-            // 3. 如果product_id变更，重新绑定商品的comic_con_id
             if (comicCon.getProductId() != null && !comicCon.getProductId().equals(oldComicCon.getProductId())) {
-                // 先清空旧商品的comic_con_id
                 if (oldComicCon.getProductId() != null) {
                     ProductEntity oldProduct = new ProductEntity();
                     oldProduct.setId(oldComicCon.getProductId());
                     oldProduct.setComicConId(null);
                     productMapper.updateById(oldProduct);
                 }
-                // 绑定新商品的comic_con_id
                 adminComicConService.bindComicConIdToProduct(id, comicCon.getProductId());
             }
 

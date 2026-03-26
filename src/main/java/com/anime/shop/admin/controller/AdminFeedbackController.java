@@ -85,7 +85,7 @@ public class AdminFeedbackController {
     }
 
     /**
-     * 新增：获取工单详情（含回复记录）
+     * 获取工单详情（含回复记录）
      */
     @GetMapping("/detail/{id}")
     public Result<FeedbackDetailVO> getFeedbackDetail(@PathVariable Long id) {
@@ -101,11 +101,10 @@ public class AdminFeedbackController {
     }
 
     /**
-     * 复用移动端DTO：回复工单（Admin端固定isAdmin=1）
+     * 回复工单（Admin端固定isAdmin=1）
      */
     @PostMapping("/reply")
     public Result<Void> replyFeedback(@Valid @RequestBody FeedbackReplyDTO dto, BindingResult bindingResult) {
-        // 参数校验
         if (bindingResult.hasErrors()) {
             String errorMsg = bindingResult.getFieldErrors().stream()
                     .map(FieldError::getDefaultMessage)
@@ -113,7 +112,6 @@ public class AdminFeedbackController {
             return Result.build(ResultCode.PARAM_ERROR.getCode(), errorMsg, null);
         }
 
-        // Admin端强制标记为管理员回复（防止前端传错）
         dto.setIsAdmin(1);
 
         try {
