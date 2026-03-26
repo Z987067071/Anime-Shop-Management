@@ -46,7 +46,7 @@ git clone https://github.com/Z987067071/Anime-Shop-Management.git
 
 我的Navicat版本还是老版2015的,所以说字符集还有这样的**utf8mb4 -- UTF-8 Unicode,排序utf8mb4_0900_ai_ci**,引入报错可能就是因为你新版Navicat以及移除了这个字符集,你只需要打开sql文件Ctrl F 查找这个字符集替换成你数据库里有的就好了
 
-[![1774490877836](C:\Users\Asuna\AppData\Local\Temp\1774490877836.png)](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?raw=true)
+https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?raw=true
 
 
 
