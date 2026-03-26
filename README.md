@@ -46,31 +46,31 @@ git clone https://github.com/Z987067071/Anime-Shop-Management.git
 
 我的Navicat版本还是老版2015的,所以说字符集还有这样的**utf8mb4 -- UTF-8 Unicode,排序utf8mb4_0900_ai_ci**,引入报错可能就是因为你新版Navicat以及移除了这个字符集,你只需要打开sql文件Ctrl F 查找这个字符集替换成你数据库里有的就好了
 
-https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?raw=true
+![数据库字符集](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?raw=true)
 
 
 
 然后是启动Redis,我是自己手动启动的,后端我学的不多,有啥更好的启动方法可以和我说说
 
-[![数据库字符集](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/2.png?raw=true)]
+![Redis](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/2.png?raw=true)
 
 
 
 启动完就可以去启动前端后端了,第一次启动可能就是慢一点
 
-![1774490982763](C:\Users\Asuna\AppData\Local\Temp\1774490982763.png)
+![后端启动](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/3.png?raw=true)
 
 
 
 这样就是成功了,然后就是前端
 
-![1774491024761](C:\Users\Asuna\AppData\Local\Temp\1774491024761.png)
+![前端启动](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/4.png?raw=true)
 
 
 
 接着你就可以进去页面发现加载不出来是因为后端重启了,所以说你得重新登录,去到我的页面退出就好了
 
-![1774491105445](C:\Users\Asuna\AppData\Local\Temp\1774491105445.png)
+![个人页面退出](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/5.png?raw=true)
 
 
 
@@ -78,7 +78,7 @@ https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?
 
 **登录注册为了方便测试,所以验证码在注册弄了,如果注册的验证码出不来那就是你没开Redis服务导致的,登陆的验证码随便输入就好,因为不会去校验**
 
-![1774491247516](C:\Users\Asuna\AppData\Local\Temp\1774491247516.png)
+![登录注册](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/6.png?raw=true)
 
 
 
@@ -86,17 +86,17 @@ https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?
 
 首先是主页的轮播图是数据库**b_banner**,我也没做什么接口去修改上传新图,所以说想要改直接从数据库改就好了
 
-![1774491275267](C:\Users\Asuna\AppData\Local\Temp\1774491275267.png)
+![轮播图](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/7.png?raw=true)
 
 下面商品推荐是**p_product**,如果你没有商品是因为还没添加,你在上面的浏览器路径尾部添加/admin/login去后台登录进入商品管理添加即可(**注意事项添加商品前请去分类管理添加一级分类和二级分类数据库是p_category**, 这里我也在当初设计没注意到,分类图的上传,只设计了添加分类,所以说你分类页面想要有图片得自己去数据库添加了,我用的是免费的静态资源网站上传,复制了url才有的图片)
 
-![1774491571762](C:\Users\Asuna\AppData\Local\Temp\1774491571762.png)
+![商品管理](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/8.png?raw=true)
 
-![1774491494522](C:\Users\Asuna\AppData\Local\Temp\1774491494522.png)
+![分类管理](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/9.png?raw=true)
 
 
 
-![1774491713311](C:\Users\Asuna\AppData\Local\Temp\1774491713311.png)
+![分类](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/10.png?raw=true)
 
 
 
@@ -106,65 +106,65 @@ https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/1.png?
 
 这个入口位于首页右上角的铃铛进入,相对来说比较隐蔽了,所以我弄了个假数据在3在那充当有消息通知嘻嘻
 
-![1774491868917](C:\Users\Asuna\AppData\Local\Temp\1774491868917.png)
+![社区帖子](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/11.png?raw=true)
 
-![1774491887965](C:\Users\Asuna\AppData\Local\Temp\1774491887965.png)
+![发布帖子](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/12.png?raw=true)
 
 
 
 发布完帖子后可以进去详情点赞评论和举报,这里有个问题是我忘记弄不能举报自己了,所以说没隐藏自己的举报按钮,不过在商品评论是隐藏了的,偷懒了
 
-![1774491927475](C:\Users\Asuna\AppData\Local\Temp\1774491927475.png)
+![帖子详情](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/13.png?raw=true)
 
 
 
 手办和周边的页面是复用的,样式也是偏向我自己弄的第一版所以说没有去重构样式,首页和部分网页的样式我是重构过使用的,你也可以看到很多注释都是ai加的,这里还是推荐用kimi去写页面样式,逻辑代码还是交给豆包好一点.(**这样一看确实风格挺割裂的哈哈哈哈瞬间降低了档次**)
 
-![1774492157822](C:\Users\Asuna\AppData\Local\Temp\1774492157822.png)
+![手办商品页](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/14.png?raw=true)
 
 
 
 接下是完工前随便加的排行榜,不得不说Kimi设计的风格还挺符合胃口的(不喜勿喷)
 
-![1774492236657](C:\Users\Asuna\AppData\Local\Temp\1774492236657.png)
+![排行榜](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/15.png?raw=true)
 
 
 
 所谓的新品首发其实就是复用了搜索页,点击后传送到页面并搜索了新品的tag,提前给商品加上新品的tag就可以搜索出来
 
-![1774492311042](C:\Users\Asuna\AppData\Local\Temp\1774492311042.png)
+![新品页](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/16.png?raw=true)
 
 
 
 然后就是商品详情页面了,详情里的图片我倒是没做,只弄了文字,你要是不怕可以给他试试用标签加图片<img src="" />试试可以去参考下别的网页的,印象里好像是有部分平台这么做的
 
-![1774492791630](C:\Users\Asuna\AppData\Local\Temp\1774492791630.png)
+![商品详情](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/17.png?raw=true)
 
 页面付款我就不截图了,有个注意的点是**普通商品和票务商品**,也就是卖漫展票的商品一定要在后台商品管理设置**漫展虚拟商品**,然后去**漫展管理**添加绑定漫展,再去**票种管理**设置早鸟票,普通票和VIP票这样的一个流程,这样你就可以在商品看到
 
-![1774493393582](C:\Users\Asuna\AppData\Local\Temp\1774493393582.png)
+![漫展票务商品](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/18.png?raw=true)
 
 买完以后你就可以去个人的票夹去看核销码,我这做的也是比较简陋(((丑
 
-![1774492994865](C:\Users\Asuna\AppData\Local\Temp\1774492994865.png)
+![票夹](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/19.png?raw=true)
 
 反正页面游戏或多或少的样式错误就不要太介意,你们也可以自行修改,具体传不传上来合并我也不是很介意,但是有优化的点现在也可以和我提出
 
 然后就是工单反馈,新增完了以后可以在里面和客服或者管理员聊天(带薪摸鱼)
 
-![1774493107181](C:\Users\Asuna\AppData\Local\Temp\1774493107181.png)
+![工单](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/20.png?raw=true)
 
-![1774493176565](C:\Users\Asuna\AppData\Local\Temp\1774493176565.png)
+![工单2](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/21.png?raw=true)
 
 
 
 后台的工单管理也可以看得到并且回复进行处理等
 
-![1774493214624](D:\cxdownload\bishe\anime-shop\1774493214624.png)
+![后台工单](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/22.png?raw=true)
 
 还有就是什么收货地址杂七杂八的
 
-![1774493314413](C:\Users\Asuna\AppData\Local\Temp\1774493314413.png)
+![地址管理](https://github.com/Z987067071/Anime-Shop-Management/blob/master/readmeImg/23.png?raw=true)
 
 
 
