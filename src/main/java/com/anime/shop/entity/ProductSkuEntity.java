@@ -30,5 +30,6 @@ public class ProductSkuEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
+    @TableField(exist = false)
     private Integer status;
 }

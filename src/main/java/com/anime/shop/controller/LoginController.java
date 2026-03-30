@@ -50,6 +50,9 @@ public class LoginController {
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new BizException(ResultCode.USERNAME_OR_PWD_ERROR);
         }
+        if (user.getStatus() != null && user.getStatus() == 0) {
+            throw new BizException(ResultCode.USER_DISABLED);
+        }
         String token = jwtUtil.generateToken(user.getId(), user.getRole());
         Map<String, String> map = new HashMap<>();
         map.put("token", token);

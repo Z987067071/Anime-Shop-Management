@@ -12,15 +12,12 @@ import com.anime.shop.common.Result;
 import com.anime.shop.common.ResultCode;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -48,142 +45,75 @@ public class AdminUserController {
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false) LocalDateTime createdAt,
             @RequestParam(required = false) LocalDateTime updatedAt,
-
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        return adminUserService.getUsers(
-                id, username, nickname, tel, email, role,
-                createdAt, updatedAt,
-                idCard, status,
-                page, size
-        );
+            @RequestParam(defaultValue = "10") int size) {
+        return adminUserService.getUsers(id, username, nickname, tel, email, role,
+                createdAt, updatedAt, idCard, status, page, size);
     }
 
-    /**
-     * 新增用户
-     * @param addDTO
-     * @param bindingResult
-     * @return
-     */
     @PostMapping("/add")
-    public Result<Void> addUser(@Valid @RequestBody UserAddDTO addDTO, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            String errorMsg = bindingResult.getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .collect(Collectors.joining("；"));
-            return Result.build(ResultCode.PARAM_ERROR.getCode(), errorMsg, null);
-        }
-
-        try {
-            adminUserAddService.addUser(addDTO);
-            return Result.ok(null);
-        } catch (BizException e) {
-            return Result.build(e.getCode(), e.getMessage(), null);
-        } catch (Exception e) {
-            return Result.build(ResultCode.SERVER_ERROR.getCode(), ResultCode.SERVER_ERROR.getMsg(), null);
-        }
+    public Result<Void> addUser(@Valid @RequestBody UserAddDTO addDTO) {
+        adminUserAddService.addUser(addDTO);
+        return Result.success();
     }
 
-    /**
-     * 编辑用户信息
-     */
     @PostMapping("/edit")
     public Result<Void> editUser(@Valid @RequestBody UserEditDTO editDTO) {
-        try {
-            adminUserEditService.editUser(editDTO);
-            return Result.ok(null);
-        } catch (BizException e) {
-            return Result.build(e.getCode(), e.getMessage(), null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.build(ResultCode.SERVER_ERROR.getCode(), ResultCode.SERVER_ERROR.getMsg(), null);
-        }
+        adminUserEditService.editUser(editDTO);
+        return Result.success();
     }
 
     @PostMapping("/resetPassword")
     public Result<String> resetPassword(@Validated @RequestBody PasswordResetDTO dto) {
         adminUserService.adminResetPasswordById(dto);
-        return Result.ok("密码重置成功");
+        return Result.success("密码重置成功");
     }
 
-    /**
-     * 删除账户
-     * @param id 用户ID（路径参数）
-     * @param operatorRole 操作人角色（请求参数）
-     * @return Result<Void>
-     */
     @DeleteMapping("/deleteAccount/{id}")
     public Result<Void> deleteUser(
-            @PathVariable("id") Long id,
-            @RequestParam("operatorRole") String operatorRole) {
+            @PathVariable Long id,
+            @RequestParam String operatorRole) {
         return adminUserService.deleteUserById(id, operatorRole);
     }
 
-
     /**
-     * 管理员/用户上传头像
-     * @param file 头像文件
-     * @param userIdStr 获取登录用户ID（需替换为你的认证逻辑）
-     * @return Result<String> 头像URL
+     * 上传头像（userId 必须由前端传入，不再使用硬编码默认值）
      */
     @PostMapping("/avatar/upload")
     public Result<String> uploadAvatar(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("userId") String userIdStr,
-            @RequestParam(value = "operatorRole", defaultValue = "admin") String operatorRole) {
-        try {
-            if (userIdStr == null || "undefined".equals(userIdStr) || userIdStr.trim().isEmpty()) {
-                userIdStr = "1999834598331097089"; // 默认管理员ID
-            }
-            Long userId = Long.parseLong(userIdStr);
-
-            if (file.isEmpty()) {
-                return Result.build(ResultCode.PARAM_ERROR.getCode(), "请选择要上传的头像文件！", null);
-            }
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null || !originalFilename.contains(".")) {
-                return Result.build(ResultCode.PARAM_ERROR.getCode(), "头像文件格式错误，请上传jpg/png/jpeg格式！", null);
-            }
-            String suffix = originalFilename.substring(originalFilename.lastIndexOf("."));
-            if (!suffix.equalsIgnoreCase(".jpg") && !suffix.equalsIgnoreCase(".png") && !suffix.equalsIgnoreCase(".jpeg")) {
-                return Result.build(ResultCode.PARAM_ERROR.getCode(), "仅支持上传jpg、png、jpeg格式的头像！", null);
-            }
-            if (file.getSize() > 2 * 1024 * 1024) {
-                return Result.build(ResultCode.PARAM_ERROR.getCode(), "头像文件大小不能超过2MB！", null);
-            }
-
-            String avatarUrl = fileUploadUtil.uploadAvatar(file);
-
-            Result<String> updateResult = adminUserService.updateUserAvatar(userId, avatarUrl);
-            if (updateResult.getCode() != ResultCode.SUCCESS.getCode()) {
-                return updateResult;
-            }
-
-            return Result.ok(avatarUrl);
-        } catch (NumberFormatException e) {
-            return Result.build(ResultCode.PARAM_ERROR.getCode(), "用户ID格式错误，请传递数字！", null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Result.build(ResultCode.SERVER_ERROR.getCode(), "头像上传失败：" + e.getMessage(), null);
+            @RequestParam("userId") Long userId,
+            @RequestParam(value = "operatorRole", defaultValue = "admin") String operatorRole) throws java.io.IOException {
+        if (file.isEmpty()) {
+            throw new BizException(ResultCode.PARAM_ERROR, "请选择要上传的头像文件");
         }
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.matches("(?i).*\\.(jpg|jpeg|png)$")) {
+            throw new BizException(ResultCode.PARAM_ERROR, "仅支持上传 jpg、png、jpeg 格式的头像");
+        }
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new BizException(ResultCode.PARAM_ERROR, "头像文件大小不能超过 2MB");
+        }
+        String avatarUrl = fileUploadUtil.uploadAvatar(file);
+        Result<String> updateResult = adminUserService.updateUserAvatar(userId, avatarUrl);
+        if (updateResult.getCode() != ResultCode.SUCCESS.getCode()) {
+            return updateResult;
+        }
+        return Result.success(avatarUrl);
     }
 
     @GetMapping("/avatar/{userId}")
-    public Result<String> getUserAvatar(@PathVariable("userId") Long userId) {
+    public Result<String> getUserAvatar(@PathVariable Long userId) {
         return adminUserService.getUserAvatar(userId);
     }
 
-    /**
-     * 校验用户名唯一性
-     */
     @GetMapping("/checkUsernameUnique")
     public Result<Boolean> checkUsernameUnique(@RequestParam String username) {
         try {
             adminUserAddService.checkUsernameUnique(username);
-            return Result.ok(true);
+            return Result.success(true);
         } catch (BizException e) {
-            return Result.ok(false);
+            return Result.success(false);
         }
     }
 }

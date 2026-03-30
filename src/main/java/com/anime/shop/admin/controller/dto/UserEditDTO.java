@@ -52,7 +52,6 @@ public class UserEditDTO {
     /**
      * 状态（可选，0禁用/1启用）
      */
-    @NotNull(message = "状态不能为空")
     @Pattern(regexp = "^[01]$", message = "状态只能是0（禁用）或1（启用）")
     private String status;
 

@@ -24,6 +24,7 @@ public enum ResultCode {
     USER_EXIST(10002, "账号已存在"),
     USER_NOT_FOUND(10003, "账号不存在"),
     USERNAME_OR_PWD_ERROR(10004, "账号或密码错误"),
+    USER_DISABLED(10008, "账号已被禁用，请联系管理员"),
     PWD_RESET_NO_PERMISSION(10006, "无权限重置密码，仅管理员/经理可操作"),
     PWD_RESET_FAILED(10007, "密码重置失败"),
 

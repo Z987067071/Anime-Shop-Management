@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+jwt:
+  secret: anime-shop-secret-key-2024-fixed-do-not-change
+  expiration: 86400000
+
 spring:
   servlet:
     multipart:
@@ -31,6 +35,10 @@ product:
     upload-path: D:/cxdownload/bishe/anime-shop/upload/
     access-path: /upload/
     server-url: http://localhost:8080
+# 静态资源根目录（feedback/comment/communityPost 等子目录均在此下）
+static:
+  resources:
+    base-path: D:/cxdownload/bishe/anime-shop/src/main/resources
 web:
   resources:
     static-locations: file:./upload/,classpath:/static/

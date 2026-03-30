@@ -1,6 +1,7 @@
 package com.anime.shop.admin.service;
 
 import com.anime.shop.admin.controller.dto.PasswordResetDTO;
+import com.anime.shop.admin.utils.RoleLevelEnum;
 import com.anime.shop.common.Result;
 import com.anime.shop.common.ResultCode;
 import com.anime.shop.entity.UserEntity;
@@ -101,16 +102,23 @@ public class AdminUserService {
             return Result.build(ResultCode.PARAM_ERROR.getCode(), "操作人角色不能为空", null);
         }
 
-        // 2. 操作人权限校验（返回ROLE_PERMISSION_DENIED/自定义密码权限码）
-        if (!"admin".equals(dto.getOperatorRole()) && !"manager".equals(dto.getOperatorRole())) {
-            // 优先复用已有权限码，无则用自定义业务码
-            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限重置密码，仅管理员/经理可操作", null);
+        // 2. 操作人权限校验
+        RoleLevelEnum operatorEnum = RoleLevelEnum.getByRole(dto.getOperatorRole());
+        if (operatorEnum == null || operatorEnum == RoleLevelEnum.CONSUMER
+                || operatorEnum == RoleLevelEnum.MEMBER) {
+            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限重置密码", null);
         }
 
-        // 3. 查询用户是否存在（返回USER_NOT_FOUND）
+        // 3. 查询用户是否存在
         UserEntity user = userMapper.selectById(dto.getId());
         if (user == null) {
             return Result.build(ResultCode.USER_NOT_FOUND.getCode(), ResultCode.USER_NOT_FOUND.getMsg(), null);
+        }
+
+        // 校验层级：不能重置同级或更高权限用户的密码
+        RoleLevelEnum targetEnum = RoleLevelEnum.getByRole(user.getRole());
+        if (!operatorEnum.canEdit(targetEnum)) {
+            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限重置同级或更高权限账户的密码", null);
         }
 
         try {
@@ -151,18 +159,21 @@ public class AdminUserService {
             return Result.build(ResultCode.PARAM_ERROR.getCode(), "操作人角色不能为空", null);
         }
 
-        // 2. 权限校验（仅admin/manager可删除，禁止删除admin角色用户）
-        if (!"admin".equals(operatorRole) && !"manager".equals(operatorRole)) {
-            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限删除账户，仅管理员/经理可操作", null);
+        // 2. 权限校验：操作人只能删除权限比自己低的用户
+        RoleLevelEnum operatorEnum = RoleLevelEnum.getByRole(operatorRole);
+        if (operatorEnum == null || operatorEnum == RoleLevelEnum.CONSUMER
+                || operatorEnum == RoleLevelEnum.MEMBER) {
+            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限删除账户", null);
         }
 
-        // 3. 查询用户是否存在 + 校验是否为admin角色（禁止删除admin）
+        // 3. 查询用户是否存在 + 校验层级
         UserEntity user = userMapper.selectById(id);
         if (user == null) {
             return Result.build(ResultCode.NOT_FOUND.getCode(), "账户不存在", null);
         }
-        if ("admin".equals(user.getRole())) {
-            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "禁止删除超级管理员账户", null);
+        RoleLevelEnum targetEnum = RoleLevelEnum.getByRole(user.getRole());
+        if (!operatorEnum.canEdit(targetEnum)) {
+            return Result.build(ResultCode.ROLE_PERMISSION_DENIED.getCode(), "无权限删除同级或更高权限账户", null);
         }
 
         try {

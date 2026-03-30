@@ -23,8 +23,7 @@ public class ProductLikeController {
     public Result<LikeResultVO> likeProduct(
             @PathVariable Long productId,
             @RequestParam Boolean isLike,
-            // 实际项目中从登录态获取用户ID（这里简化为参数）
-            @RequestParam Long userId
+            @RequestAttribute Long userId
     ) {
         try {
             LikeResultVO result = productLikeService.likeProduct(productId, userId, isLike);

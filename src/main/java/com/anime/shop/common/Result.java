@@ -1,22 +1,16 @@
 package com.anime.shop.common;
 
 import lombok.Data;
-// 统一外包装
-//前端只认 {code, msg, data}，不管成功失败都走这个对象；全局异常处理器也用它组装错误 JSON。
+
+/**
+ * 统一响应包装，前端只认 {code, msg, data}
+ */
 @Data
 public class Result<T> {
     private int code;
     private String msg;
     private T data;
 
-    // 旧
-    public static <T> Result<T> ok(T data) {return build(ResultCode.SUCCESS, data);}
-    public static <T> Result<T> fail(String msg) {
-        return build(ResultCode.ERROR.getCode(), msg, null);
-    }
-    public static <T> Result<T> build(ResultCode rc, T data) {
-        return build(rc.getCode(), rc.getMsg(), data);
-    }
     public static <T> Result<T> build(int code, String msg, T data) {
         Result<T> r = new Result<>();
         r.setCode(code);
@@ -25,20 +19,39 @@ public class Result<T> {
         return r;
     }
 
-    // 新 兼容
-    public static <T> Result<T> success() {
-        return build(ResultCode.SUCCESS, null);
-    }
     public static <T> Result<T> success(T data) {
-        return ok(data); // 直接复用原有 ok()，避免重复逻辑
+        return build(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMsg(), data);
     }
+
+    public static <T> Result<T> success() {
+        return success(null);
+    }
+
+    public static <T> Result<T> error(int code, String msg) {
+        return build(code, msg, null);
+    }
+
     public static <T> Result<T> error(ResultCode rc) {
         return build(rc.getCode(), rc.getMsg(), null);
     }
-    /**
-     * 带自定义code+msg的错误返回（更灵活的错误提示）
-     */
-    public static <T> Result<T> error(int code, String msg) {
-        return build(code, msg, null);
+
+    // ---- 兼容旧调用，避免大范围改动 ----
+
+    /** @deprecated 请使用 {@link #success(Object)} */
+    @Deprecated
+    public static <T> Result<T> ok(T data) {
+        return success(data);
+    }
+
+    /** @deprecated 请使用 {@link #error(int, String)} */
+    @Deprecated
+    public static <T> Result<T> fail(String msg) {
+        return error(ResultCode.ERROR.getCode(), msg);
+    }
+
+    /** @deprecated 请使用 {@link #build(int, String, Object)} */
+    @Deprecated
+    public static <T> Result<T> build(ResultCode rc, T data) {
+        return build(rc.getCode(), rc.getMsg(), data);
     }
 }

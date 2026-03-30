@@ -2,6 +2,7 @@ package com.anime.shop.admin.service.impl;
 
 import com.anime.shop.admin.controller.dto.UserAddDTO;
 import com.anime.shop.admin.service.AdminUserAddService;
+import com.anime.shop.admin.utils.RoleLevelEnum;
 import com.anime.shop.common.BizException;
 import com.anime.shop.common.ResultCode;
 import com.anime.shop.entity.UserEntity;
@@ -24,15 +25,17 @@ public class AdminUserAddServiceImpl implements AdminUserAddService {
     private PasswordEncoder passwordEncoder;
 
     /**
-     * 权限校验：仅admin/manager可新增账户，manager不能新增admin角色
+     * 权限校验：操作人只能新增权限比自己低的角色
      */
     private void checkPermission(String operatorRole, String targetRole) {
-        // 非管理员/经理无权限
-        if (!"admin".equals(operatorRole) && !"manager".equals(operatorRole)) {
+        RoleLevelEnum operatorEnum = RoleLevelEnum.getByRole(operatorRole);
+        RoleLevelEnum targetEnum = RoleLevelEnum.getByRole(targetRole);
+        // consumer 无权限，或操作人不能新增同级/更高权限角色
+        if (operatorEnum == null || operatorEnum == RoleLevelEnum.CONSUMER
+                || operatorEnum == RoleLevelEnum.MEMBER) {
             throw new BizException(ResultCode.ROLE_PERMISSION_DENIED);
         }
-        // 经理不能新增超级管理员
-        if ("manager".equals(operatorRole) && "admin".equals(targetRole)) {
+        if (!operatorEnum.canEdit(targetEnum)) {
             throw new BizException(ResultCode.ROLE_PERMISSION_DENIED);
         }
     }

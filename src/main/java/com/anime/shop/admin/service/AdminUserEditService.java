@@ -6,6 +6,7 @@ import com.anime.shop.common.BizException;
 import com.anime.shop.common.ResultCode;
 import com.anime.shop.entity.UserEntity;
 import com.anime.shop.mapper.UserMapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,7 +73,13 @@ public class AdminUserEditService {
             updateUser.setEmail(editDTO.getEmail());
         }
         if (editDTO.getStatus() != null) {
-            updateUser.setStatus(Integer.parseInt(editDTO.getStatus()));
+            // 用 UpdateWrapper 强制更新 status=0，避免 MyBatis-Plus 忽略 0 值
+            int statusVal = Integer.parseInt(editDTO.getStatus());
+            userMapper.update(null, new LambdaUpdateWrapper<UserEntity>()
+                    .eq(UserEntity::getId, editDTO.getId())
+                    .set(UserEntity::getStatus, statusVal)
+                    .set(UserEntity::getUpdatedAt, LocalDateTime.now()));
+            return;
         }
 
         // 5. 执行更新
