@@ -21,7 +21,10 @@ public class GlobalExceptionHandler {
         return Result.error(ResultCode.PARAM_ERROR.getCode(), errorMsg);
     }
 
+<<<<<<< HEAD
     /** 业务异常 */
+=======
+>>>>>>> master
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBiz(BizException e) {
         return Result.error(e.getCode(), e.getMessage());
