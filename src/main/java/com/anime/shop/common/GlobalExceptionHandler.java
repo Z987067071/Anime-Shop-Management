@@ -15,7 +15,6 @@ public class GlobalExceptionHandler {
         return Result.fail(e.getMessage());
     }
 
-    /** 抓自定义业务异常（先写个壳，Day3 补） */
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBiz(BizException e) {
         return Result.build(e.getCode(), e.getMessage(), null);

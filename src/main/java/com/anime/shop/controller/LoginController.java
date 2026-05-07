@@ -7,6 +7,7 @@ import com.anime.shop.controller.dto.LoginDTO;
 import com.anime.shop.controller.dto.RegisterDTO;
 import com.anime.shop.entity.UserEntity;
 import com.anime.shop.mapper.UserMapper;
+import com.anime.shop.service.CaptchaService;
 import com.anime.shop.service.LoginService;
 import com.anime.shop.util.JwtUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -37,6 +38,9 @@ public class LoginController {
     @Resource
     private PasswordEncoder passwordEncoder;
 
+    @Resource
+    private CaptchaService captchaService;
+
     /**
      * 用户登录
      * @param dto 登录信息
@@ -45,6 +49,10 @@ public class LoginController {
 
     @PostMapping("/login")
     public Result<Map<String, String>> login(@RequestBody LoginDTO dto) {
+        // 先校验验证码
+        if (!captchaService.validate(dto.getUsername(), dto.getCaptcha())) {
+            throw new BizException(ResultCode.CAPTCHA_ERROR);
+        }
         UserEntity user = userMapper.selectOne(
                 Wrappers.<UserEntity>lambdaQuery().eq(UserEntity::getUsername, dto.getUsername()));
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {

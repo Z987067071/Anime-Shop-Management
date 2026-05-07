@@ -20,7 +20,6 @@ spring:
       port: 6379
   jackson:
     deserialization:
-      # 核心：全局忽略未知字段，不再因字段名不匹配报错
       fail-on-unknown-properties: false
 avatar:
   local:
