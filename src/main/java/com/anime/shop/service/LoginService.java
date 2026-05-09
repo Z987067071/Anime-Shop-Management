@@ -60,6 +60,7 @@ public class LoginService {
         UserEntity user = new UserEntity();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
+        user.setRole("consumer"); // 移动端注册用户默认为普通用户
         userMapper.insert(user);
     }
 }
