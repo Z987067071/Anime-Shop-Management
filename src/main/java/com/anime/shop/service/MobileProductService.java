@@ -31,6 +31,17 @@ public interface MobileProductService {
     Page<ProductVO> listAll(Integer pageNum, Integer pageSize);
 
     /**
+     * 首页商品列表（支持 tab 筛选）
+     * sort=hot    → 按销量降序
+     * sort=new    → 按创建时间降序
+     * sort=figure → firstCategoryId=1（手办）
+     * sort=goods  → firstCategoryId=2（周边）
+     * 其他/null   → 按 sort 字段降序
+     * @param firstCategoryId 可选，直接指定一级分类ID（优先级高于 sort 中的分类逻辑）
+     */
+    Page<ProductVO> listAllWithFilter(Integer pageNum, Integer pageSize, String sort, Long firstCategoryId);
+
+    /**
      * 按一级分类查询上架商品（手办/周边等）
      * @param firstCategoryId 一级分类ID
      * @param pageNum 页码

@@ -30,6 +30,10 @@ public class ProductSkuEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
+<<<<<<< HEAD
+=======
+    /** 票种状态（非数据库字段，从 comic_con_ticket 手动赋值） */
+>>>>>>> master
     @TableField(exist = false)
     private Integer status;
 }

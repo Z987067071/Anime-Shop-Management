@@ -18,6 +18,8 @@ public class ProductAddDTO {
     /** 二级分类ID */
     @NotNull(message = "分类不能为空")
     private Long categoryId;
+    /** 一级分类ID（由前端根据二级分类自动推导传入） */
+    private Long firstCategoryId;
     /** 封面图 */
     private String coverImg;
     /** 售价 */

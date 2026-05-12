@@ -49,18 +49,25 @@ public class LoginController {
 
     @PostMapping("/login")
     public Result<Map<String, String>> login(@RequestBody LoginDTO dto) {
-        // 先校验验证码
-        if (!captchaService.validate(dto.getUsername(), dto.getCaptcha())) {
-            throw new BizException(ResultCode.CAPTCHA_ERROR);
-        }
         UserEntity user = userMapper.selectOne(
                 Wrappers.<UserEntity>lambdaQuery().eq(UserEntity::getUsername, dto.getUsername()));
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             throw new BizException(ResultCode.USERNAME_OR_PWD_ERROR);
         }
+<<<<<<< HEAD
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new BizException(ResultCode.USER_DISABLED);
         }
+=======
+        
+        // 移动端登录必须校验验证码，管理端后台登录不需要
+        if (!"admin".equals(dto.getPlatform())) {
+            if (!captchaService.validate(dto.getUsername(), dto.getCaptcha())) {
+                throw new BizException(ResultCode.CAPTCHA_ERROR);
+            }
+        }
+        
+>>>>>>> master
         String token = jwtUtil.generateToken(user.getId(), user.getRole());
         Map<String, String> map = new HashMap<>();
         map.put("token", token);

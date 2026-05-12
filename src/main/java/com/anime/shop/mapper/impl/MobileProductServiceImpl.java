@@ -90,6 +90,47 @@ public class MobileProductServiceImpl implements MobileProductService {
         return true;
     }
     /**
+     * 首页商品列表（支持 tab 筛选）
+     * sort=hot    → 按销量降序（热销）
+     * sort=new    → 按创建时间降序（新品）
+     * sort=figure → firstCategoryId=1（手办）
+     * sort=goods  → firstCategoryId=2（周边）
+     * 其他/null   → 按 sort 字段降序（默认）
+     */
+    @Override
+    public Page<ProductVO> listAllWithFilter(Integer pageNum, Integer pageSize, String sort, Long firstCategoryId) {
+        Page<ProductEntity> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<ProductEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ProductEntity::getStatus, 1); // 仅上架
+
+        // 1. 分类筛选：前端直接传了 firstCategoryId 时优先使用
+        if (firstCategoryId != null) {
+            wrapper.eq(ProductEntity::getFirstCategoryId, firstCategoryId);
+        } else if ("figure".equalsIgnoreCase(sort)) {
+            // 手办 tab：一级分类 ID=1
+            wrapper.eq(ProductEntity::getFirstCategoryId, 1L);
+        } else if ("goods".equalsIgnoreCase(sort)) {
+            // 周边 tab：一级分类 ID=2
+            wrapper.eq(ProductEntity::getFirstCategoryId, 2L);
+        }
+
+        // 2. 排序规则
+        if ("hot".equalsIgnoreCase(sort)) {
+            // 热销：按销量降序
+            wrapper.orderByDesc(ProductEntity::getSales);
+        } else if ("new".equalsIgnoreCase(sort)) {
+            // 新品：按创建时间降序
+            wrapper.orderByDesc(ProductEntity::getCreateTime);
+        } else {
+            // 默认（含 figure/goods）：按 sort 字段降序
+            wrapper.orderByDesc(ProductEntity::getSort);
+        }
+
+        Page<ProductEntity> productPage = productMapper.selectPage(page, wrapper);
+        return convertProductPageToVOPage(productPage);
+    }
+
+    /**
      * 首页查询全部上架商品（带分页）
      */
     @Override

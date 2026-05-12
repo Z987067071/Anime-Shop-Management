@@ -25,6 +25,11 @@ public class OrderSubmitDTO {
     private String consignee;            // 收货人姓名
 
     @NotBlank(message = "收货人手机号不能为空", groups = {NormalOrderGroup.class})
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^1[3-9]\\d{9}$",
+            message = "手机号格式不正确",
+            groups = {NormalOrderGroup.class, TicketOrderGroup.class}
+    )
     private String consigneePhone;
 
     @NotBlank(message = "收货人地址不能为空", groups = {NormalOrderGroup.class})

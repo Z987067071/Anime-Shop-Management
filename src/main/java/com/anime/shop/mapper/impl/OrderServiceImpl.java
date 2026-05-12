@@ -7,10 +7,12 @@ import com.anime.shop.controller.dto.buyer.BuyerInfoDTO;
 import com.anime.shop.controller.dto.order.*;
 import com.anime.shop.entity.CartEntity;
 import com.anime.shop.entity.ComicConTicket;
+import com.anime.shop.entity.OrderTicketRelationEntity;
 import com.anime.shop.entity.ProductEntity;
 import com.anime.shop.enums.OrderStatusEnum;
 import com.anime.shop.enums.PayTypeEnum;
 import com.anime.shop.mapper.CartMapper;
+import com.anime.shop.mapper.OrderTicketRelationMapper;
 import com.anime.shop.mapper.POrderItemMapper;
 import com.anime.shop.mapper.POrderMapper;
 import com.anime.shop.service.OrderService;
@@ -41,6 +43,8 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
     private ProductSkuMapper productSkuMapper;
     @Resource
     private ComicConTicketMapper comicConTicketMapper;
+    @Resource
+    private OrderTicketRelationMapper orderTicketRelationMapper;
 
     /**
      * 生成唯一订单编号（yyyyMMddHHmmss + 6位随机数）
@@ -58,7 +62,6 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long submitOrder(OrderSubmitDTO submitDTO) {
-        // 1. 库存校验
         for (OrderItemDTO item : submitDTO.getOrderItems()) {
             ProductEntity product = productMapper.selectById(item.getProductId());
             if (product == null) {
@@ -66,10 +69,6 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
             }
             if (product.getStatus() != 1) {
                 throw new RuntimeException("商品已下架：" + product.getProductName());
-            }
-            // 🔥 修复：使用 remainStock
-            if (product.getRemainStock() < item.getQuantity()) {
-                throw new RuntimeException("商品库存不足：" + product.getProductName() + "，剩余库存：" + product.getRemainStock());
             }
         }
 
@@ -91,6 +90,7 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
         order.setPayType(0);
         order.setIsDelete(0);
         order.setBuyerIds(buyerIds);
+        order.setOrderType(submitDTO.getIsTicket()); // 同步订单类型：0=普通商品，1=漫展票务
         baseMapper.insert(order);
         Long orderId = order.getId();
 
@@ -123,15 +123,42 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
             orderItemMapper.insert(item);
         }
 
+        // 票务订单：写入核销关联表
+        if (submitDTO.getIsTicket() == 1 && !CollectionUtils.isEmpty(buyerList)) {
+            for (int i = 0; i < orderItems.size(); i++) {
+                POrderItem orderItem = orderItems.get(i);
+                BuyerInfoDTO buyer = buyerList.get(i % buyerList.size());
+                
+                OrderTicketRelationEntity ticketRelation = new OrderTicketRelationEntity();
+                ticketRelation.setOrderId(orderId);
+                ticketRelation.setOrderItemId(orderItem.getId());
+                ticketRelation.setUserId(submitDTO.getUserId());
+                ticketRelation.setComicConTicketId(orderItem.getSkuId());
+                ticketRelation.setRealName(buyer.getName());
+                ticketRelation.setIdCard(buyer.getIdCard());
+                // 核销码：订单号后6位 + 连字符 + 序号，格式如：736820-01
+                ticketRelation.setVerifyCode(orderNo.substring(orderNo.length() - 6) + "-" + String.format("%02d", i + 1));
+                ticketRelation.setVerifyStatus(0); // 未核销
+                orderTicketRelationMapper.insert(ticketRelation);
+            }
+        }
+
         for (OrderItemDTO item : submitDTO.getOrderItems()) {
-            ProductEntity product = productMapper.selectById(item.getProductId());
-            product.setRemainStock(product.getRemainStock() - item.getQuantity());
-            product.setUpdateTime(LocalDateTime.now());
-            productMapper.updateById(product);
+            LambdaUpdateWrapper<ProductEntity> stockWrapper = new LambdaUpdateWrapper<>();
+            stockWrapper.eq(ProductEntity::getId, item.getProductId())
+                    .ge(ProductEntity::getRemainStock, item.getQuantity())
+                    .setSql("remain_stock = remain_stock - " + item.getQuantity());
+            int rows = productMapper.update(null, stockWrapper);
+            if (rows == 0) {
+                ProductEntity product = productMapper.selectById(item.getProductId());
+                String name = product != null ? product.getProductName() : "ID=" + item.getProductId();
+                throw new RuntimeException("商品库存不足：" + name);
+            }
 
             if (item.getSkuId() != null) {
                 LambdaUpdateWrapper<ComicConTicket> wrapper = new LambdaUpdateWrapper<>();
                 wrapper.eq(ComicConTicket::getSkuId, item.getSkuId())
+                        .ge(ComicConTicket::getStock, item.getQuantity())
                         .setSql("stock = stock - " + item.getQuantity());
                 comicConTicketMapper.update(null, wrapper);
             }
@@ -210,12 +237,10 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
             );
 
             for (POrderItem item : items) {
-                ProductEntity product = productMapper.selectById(item.getProductId());
-                if (product != null) {
-                    int oldSales = product.getSales() == null ? 0 : product.getSales();
-                    product.setSales(oldSales + item.getQuantity());
-                    productMapper.updateById(product);
-                }
+                LambdaUpdateWrapper<ProductEntity> salesWrapper = new LambdaUpdateWrapper<>();
+                salesWrapper.eq(ProductEntity::getId, item.getProductId())
+                        .setSql("sales = sales + " + item.getQuantity());
+                productMapper.update(null, salesWrapper);
             }
             return true;
         }
@@ -237,15 +262,11 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
             List<POrderItem> orderItems = orderItemMapper.selectList(itemWrapper);
 
             for (POrderItem item : orderItems) {
-                ProductEntity product = productMapper.selectById(item.getProductId());
-                if (product != null) {
-                    int oldSales = product.getSales() == null ? 0 : product.getSales();
-                    product.setSales(Math.max(0, oldSales - item.getQuantity()));
-
-                    product.setRemainStock(product.getRemainStock() + item.getQuantity());
-                    product.setUpdateTime(LocalDateTime.now());
-                    productMapper.updateById(product);
-                }
+                LambdaUpdateWrapper<ProductEntity> restoreWrapper = new LambdaUpdateWrapper<>();
+                restoreWrapper.eq(ProductEntity::getId, item.getProductId())
+                        .setSql("remain_stock = remain_stock + " + item.getQuantity()
+                                + ", sales = GREATEST(0, sales - " + item.getQuantity() + ")");
+                productMapper.update(null, restoreWrapper);
 
                 if (item.getSkuId() != null) {
                     LambdaUpdateWrapper<ComicConTicket> wrapper = new LambdaUpdateWrapper<>();
@@ -328,15 +349,12 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
         return now.isAfter(timeoutTime);
     }
 
-    /**
-     * 新增：查询用户的漫展票务订单（productType=1）
-     */
     @Override
     public List<UserComicConTicketVO> getUserComicConTickets(Long userId) {
-        // 1. 查询用户所有有效订单（未删除）
         LambdaQueryWrapper<POrder> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(POrder::getUserId, userId)
                 .eq(POrder::getIsDelete, 0)
+                .eq(POrder::getOrderType, 1)
                 .orderByDesc(POrder::getCreateTime);
         List<POrder> orderList = baseMapper.selectList(wrapper);
 
@@ -344,49 +362,78 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
             return Collections.emptyList();
         }
 
-        // 2. 过滤并转换为票务VO
-        return orderList.stream().map(order -> {
-            // 查询订单项（票务订单通常只有一个订单项）
+        List<UserComicConTicketVO> result = new ArrayList<>();
+
+        for (POrder order : orderList) {
             LambdaQueryWrapper<POrderItem> itemWrapper = new LambdaQueryWrapper<>();
             itemWrapper.eq(POrderItem::getOrderId, order.getId())
                     .eq(POrderItem::getIsDelete, 0);
             List<POrderItem> orderItems = orderItemMapper.selectList(itemWrapper);
+            if (orderItems.isEmpty()) continue;
 
-            if (orderItems.isEmpty()) {
-                return null;
+            POrderItem firstItem = orderItems.get(0);
+            ProductEntity product = productMapper.selectById(firstItem.getProductId());
+            if (product == null || (product.getProductType() != 1 && product.getIsTicket() != 1)) continue;
+
+            // 从数据库读所有核销记录，每张票一条
+            List<com.anime.shop.entity.OrderTicketRelationEntity> ticketRelations =
+                    orderTicketRelationMapper.selectByOrderId(order.getId());
+
+            // 构建每张票的核销信息列表
+            List<com.anime.shop.controller.dto.order.TicketVerifyVO> ticketVerifyList = new ArrayList<>();
+            for (com.anime.shop.entity.OrderTicketRelationEntity relation : ticketRelations) {
+                com.anime.shop.controller.dto.order.TicketVerifyVO ticketVerifyVO =
+                        new com.anime.shop.controller.dto.order.TicketVerifyVO();
+                ticketVerifyVO.setVerifyCode(relation.getVerifyCode());
+                ticketVerifyVO.setIsVerified(relation.getVerifyStatus() != null && relation.getVerifyStatus() == 1);
+                ticketVerifyVO.setBuyerName(relation.getRealName());
+                // 身份证脱敏
+                String idCard = relation.getIdCard();
+                if (idCard != null && idCard.length() == 18) {
+                    idCard = idCard.substring(0, 6) + "********" + idCard.substring(14);
+                }
+                ticketVerifyVO.setBuyerIdCard(idCard);
+                ticketVerifyVO.setVerifyQrCodeUrl(
+                        com.anime.shop.util.QrCodeUtils.generateVerifyQrCode(relation.getVerifyCode())
+                );
+                ticketVerifyList.add(ticketVerifyVO);
             }
-            POrderItem orderItem = orderItems.get(0);
 
-            // 查询商品信息，过滤出票务商品（productType=1 或 isTicket=1）
-            ProductEntity product = productMapper.selectById(orderItem.getProductId());
-            if (product == null || (product.getProductType() != 1 && product.getIsTicket() != 1)) {
-                return null;
+            // 每个订单聚合为一个VO，多张票放进ticketVerifyList
+            UserComicConTicketVO vo = new UserComicConTicketVO();
+            vo.setOrderId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setCreateTime(order.getCreateTime());
+            vo.setPayTime(order.getPayTime());
+            vo.setOrderStatus(order.getOrderStatus());
+            vo.setOrderStatusName(getOrderStatusName(order.getOrderStatus()));
+            vo.setComicConName(product.getProductName());
+            vo.setTicketType(firstItem.getTicketType() != null ? firstItem.getTicketType() : "普通票");
+            vo.setTicketPrice(firstItem.getProductPrice() != null ? firstItem.getProductPrice() : BigDecimal.ZERO);
+            vo.setTicketCount(orderItems.size());
+            // 封面图从订单项的商品图取，兜底用商品coverImg
+            String banner = firstItem.getProductImg();
+            if (banner == null || banner.isEmpty()) {
+                banner = product.getCoverImg();
+            }
+            vo.setComicConBanner(banner);
+            vo.setTicketVerifyList(ticketVerifyList);
+            // 兜底：第一张票的核销码放顶层，兼容前端旧逻辑
+            if (!ticketVerifyList.isEmpty()) {
+                vo.setVerifyCode(ticketVerifyList.get(0).getVerifyCode());
+                vo.setVerifyQrCodeUrl(ticketVerifyList.get(0).getVerifyQrCodeUrl());
+                vo.setIsVerified(ticketVerifyList.stream().allMatch(t -> Boolean.TRUE.equals(t.getIsVerified())));
+            } else {
+                vo.setVerifyCode("");
+                vo.setIsVerified(order.getOrderStatus() == 3);
             }
 
-            // 封装票务VO
-            UserComicConTicketVO ticketVO = new UserComicConTicketVO();
-            ticketVO.setOrderId(order.getId());
-            ticketVO.setOrderNo(order.getOrderNo());
-            ticketVO.setCreateTime(order.getCreateTime());
-            ticketVO.setPayTime(order.getPayTime());
-            ticketVO.setOrderStatus(order.getOrderStatus());
-            // 转换状态名称（适配前端展示）
-            ticketVO.setOrderStatusName(getOrderStatusName(order.getOrderStatus()));
+            result.add(vo);
+        }
 
-            // 票务核心信息
-            ticketVO.setComicConName(product.getProductName()); // 漫展名称=商品名称
-            ticketVO.setTicketType(orderItem.getTicketType() != null ? orderItem.getTicketType() : "普通票");
-            ticketVO.setTicketPrice(orderItem.getProductPrice() != null ? orderItem.getProductPrice() : new BigDecimal(0)); // 用productPrice替代getPrice()
-            ticketVO.setVerifyCode(generateVerifyCode(order.getOrderNo())); // 临时核销码
-            ticketVO.setIsVerified(order.getOrderStatus() == 3); // 已完成=已核销
-
-            return ticketVO;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        return result;
     }
 
-    /**
-     * 转换订单状态名称（私有工具方法）
-     */
     private String getOrderStatusName(Integer status) {
         if (status == null) {
             return "未知状态";
@@ -407,16 +454,4 @@ public class OrderServiceImpl extends ServiceImpl<POrderMapper, POrder> implemen
         }
     }
 
-    /**
-     * 新增：生成临时核销码（后续可持久化到订单表）
-     */
-    private String generateVerifyCode(String orderNo) {
-        if (orderNo == null || orderNo.length() < 6) {
-            orderNo = "000000" + System.currentTimeMillis(); // 兜底
-        }
-        // 简单规则：订单号后6位 + 随机4位
-        String suffix = orderNo.substring(orderNo.length() - 6);
-        String random = String.valueOf((int) ((Math.random() * 9 + 1) * 1000));
-        return suffix + "-" + random;
-    }
 }

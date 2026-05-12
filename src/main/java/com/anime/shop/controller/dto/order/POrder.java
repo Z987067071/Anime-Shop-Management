@@ -39,5 +39,6 @@ public class POrder {
     @TableField(exist = false)
     private Integer productType;
     private Integer isTicket;
+    private Integer orderType;           // 订单类型：0=普通商品，1=漫展票务
     private String buyerIds;
 }

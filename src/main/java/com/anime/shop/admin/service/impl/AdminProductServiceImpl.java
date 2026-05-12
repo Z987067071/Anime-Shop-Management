@@ -4,6 +4,7 @@ import com.anime.shop.admin.controller.dto.product.ProductAddDTO;
 import com.anime.shop.admin.controller.dto.product.ProductEditDTO;
 import com.anime.shop.admin.controller.dto.product.ProductQueryDTO;
 import com.anime.shop.admin.controller.dto.product.ProductVO;
+import com.anime.shop.admin.mapper.category.ProductCategoryMapper;
 import com.anime.shop.admin.mapper.product.ProductDetailMapper;
 import com.anime.shop.admin.mapper.product.ProductImageMapper;
 import com.anime.shop.admin.mapper.product.ProductMapper;
@@ -15,6 +16,7 @@ import com.anime.shop.entity.ProductDetailEntity;
 import com.anime.shop.entity.ProductEntity;
 import com.anime.shop.entity.ProductImageEntity;
 import com.anime.shop.entity.ProductSkuEntity;
+import com.anime.shop.entity.ProductCategoryEntity;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -40,6 +42,9 @@ public class AdminProductServiceImpl extends ServiceImpl<ProductMapper, ProductE
     private ProductImageMapper productImageMapper;
     @Resource
     private AdminProductSkuService productSkuService; // 注意你的Service名称是AdminProductSkuService
+
+    @Resource
+    private ProductCategoryMapper productCategoryMapper;
 
     @Override
     public List<ProductSkuEntity> listProductSku(Long productId) {
@@ -103,6 +108,16 @@ public class AdminProductServiceImpl extends ServiceImpl<ProductMapper, ProductE
         ProductEntity product = new ProductEntity();
         BeanUtils.copyProperties(dto, product);
         product.setStatus(1); // 默认上架
+
+        // 自动推导 firstCategoryId：根据二级分类ID查父分类ID
+        if (product.getFirstCategoryId() == null || product.getFirstCategoryId() == 0) {
+            if (dto.getCategoryId() != null) {
+                ProductCategoryEntity category = productCategoryMapper.selectById(dto.getCategoryId());
+                if (category != null && category.getParentId() != null && category.getParentId() != 0) {
+                    product.setFirstCategoryId(category.getParentId());
+                }
+            }
+        }
         if (dto.getProductType() != null && dto.getProductType() == 1) {
             product.setProductType(1);
             product.setIsTicket(1);
@@ -113,6 +128,7 @@ public class AdminProductServiceImpl extends ServiceImpl<ProductMapper, ProductE
 
         productMapper.insert(product);
         Long productId = product.getId();
+        System.out.println("新增商品：productId=" + productId + ", categoryId=" + product.getCategoryId() + ", firstCategoryId=" + product.getFirstCategoryId());
 
         // 2. 新增商品详情
         if (dto.getDetailContent() != null && !dto.getDetailContent().isEmpty()) {
@@ -202,6 +218,14 @@ public class AdminProductServiceImpl extends ServiceImpl<ProductMapper, ProductE
         // 2. 更新商品基础信息
         ProductEntity product = new ProductEntity();
         BeanUtils.copyProperties(dto, product);
+
+        // 自动推导 firstCategoryId：根据二级分类ID查父分类ID
+        if ((product.getFirstCategoryId() == null || product.getFirstCategoryId() == 0) && dto.getCategoryId() != null) {
+            ProductCategoryEntity category = productCategoryMapper.selectById(dto.getCategoryId());
+            if (category != null && category.getParentId() != null && category.getParentId() != 0) {
+                product.setFirstCategoryId(category.getParentId());
+            }
+        }
         if (dto.getProductType() != null) {
             if (dto.getProductType() == 1) {
                 product.setProductType(1);

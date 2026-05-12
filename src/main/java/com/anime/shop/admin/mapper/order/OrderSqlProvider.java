@@ -19,9 +19,13 @@ public class OrderSqlProvider {
         if (query.getOrderNo() != null && !query.getOrderNo().isEmpty()) {
             sql.AND().WHERE("order_no LIKE CONCAT('%', #{query.orderNo}, '%')");
         }
-        // 动态拼接条件：收货人
+        // 动态拼接条件：收货人/购票人（普通订单搜consignee，票务订单搜order_ticket_relation.real_name）
         if (query.getConsignee() != null && !query.getConsignee().isEmpty()) {
-            sql.AND().WHERE("consignee LIKE CONCAT('%', #{query.consignee}, '%')");
+            sql.AND().WHERE("(consignee LIKE CONCAT('%', #{query.consignee}, '%') " +
+                    "OR EXISTS (SELECT 1 FROM order_ticket_relation otr2 " +
+                    "WHERE otr2.order_id = p_order.id " +
+                    "AND otr2.real_name LIKE CONCAT('%', #{query.consignee}, '%') " +
+                    "AND otr2.is_delete = 0))");
         }
         // 动态拼接条件：收货人手机号
         if (query.getConsigneePhone() != null && !query.getConsigneePhone().isEmpty()) {
@@ -38,16 +42,11 @@ public class OrderSqlProvider {
         if (query.getOrderType() != null) {
             sql.AND().WHERE("order_type = #{query.orderType}");
         }
-        if (query.getOrderType() != null && query.getOrderType() == 1) {
-            // 关联票务订单表
-            sql.JOIN("order_ticket_relation tor ON p_order.id = tor.order_id");
-            if (query.getVerifyStatus() != null) {
-                sql.AND().WHERE("tor.verify_status = #{query.verifyStatus}");
-            }
-            if (query.getComicConId() != null) {
-                sql.JOIN("comic_con_ticket cct ON tor.comic_con_ticket_id = cct.id");
-                sql.AND().WHERE("cct.comic_con_id = #{query.comicConId}");
-            }
+        if (query.getOrderType() != null && query.getOrderType() == 1 && query.getVerifyStatus() != null) {
+            sql.AND().WHERE("EXISTS (SELECT 1 FROM order_ticket_relation tor WHERE tor.order_id = p_order.id AND tor.verify_status = #{query.verifyStatus} AND tor.is_delete = 0)");
+        }
+        if (query.getOrderType() != null && query.getOrderType() == 1 && query.getComicConId() != null) {
+            sql.AND().WHERE("EXISTS (SELECT 1 FROM order_ticket_relation tor INNER JOIN comic_con_ticket cct ON tor.comic_con_ticket_id = cct.id WHERE tor.order_id = p_order.id AND cct.comic_con_id = #{query.comicConId})");
         }
 
         // 排序

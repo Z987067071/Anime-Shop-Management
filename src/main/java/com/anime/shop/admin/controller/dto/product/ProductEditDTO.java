@@ -21,6 +21,9 @@ public class ProductEditDTO {
     /** 二级分类ID（可选修改） */
     private Long categoryId;
 
+    /** 一级分类ID（由前端根据二级分类自动推导传入） */
+    private Long firstCategoryId;
+
     /** 封面图（可选修改） */
     private String coverImg;
 

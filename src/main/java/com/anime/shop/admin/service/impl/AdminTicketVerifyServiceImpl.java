@@ -82,13 +82,21 @@ public class AdminTicketVerifyServiceImpl implements AdminTicketVerifyService {
                 .set(OrderTicketRelationEntity::getVerifyStaff, dto.getVerifyStaff());
         orderTicketRelationMapper.update(null, updateWrapper);
 
-        // 6. 同步更新订单状态为"已完成"（票务订单无物流，核销即完成）
+        // 6. 检查该订单所有票是否全部核销完毕，全部核销才更新订单状态为"已完成"
         if (ticketRelation.getOrderId() != null) {
-            LambdaUpdateWrapper<OrderEntity> orderWrapper = new LambdaUpdateWrapper<>();
-            orderWrapper.eq(OrderEntity::getId, ticketRelation.getOrderId())
-                    .set(OrderEntity::getOrderStatus, 3) // 3=已完成
-                    .set(OrderEntity::getReceiveTime, LocalDateTime.now());
-            orderEntityMapper.update(null, orderWrapper);
+            long unverifiedCount = orderTicketRelationMapper.selectCount(
+                new LambdaQueryWrapper<OrderTicketRelationEntity>()
+                    .eq(OrderTicketRelationEntity::getOrderId, ticketRelation.getOrderId())
+                    .eq(OrderTicketRelationEntity::getVerifyStatus, 0)
+            );
+            if (unverifiedCount == 0) {
+                // 所有票都核销完了，订单状态改为已完成
+                LambdaUpdateWrapper<OrderEntity> orderWrapper = new LambdaUpdateWrapper<>();
+                orderWrapper.eq(OrderEntity::getId, ticketRelation.getOrderId())
+                        .set(OrderEntity::getOrderStatus, 3)
+                        .set(OrderEntity::getReceiveTime, LocalDateTime.now());
+                orderEntityMapper.update(null, orderWrapper);
+            }
         }
 
         // 7. 记录核销成功日志

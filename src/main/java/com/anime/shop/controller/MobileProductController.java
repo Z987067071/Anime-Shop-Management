@@ -23,11 +23,37 @@ public class MobileProductController {
     private final ProductCommentService productCommentService;
     private final ProductLikeService productLikeService;
 
+<<<<<<< HEAD
     @GetMapping("/list")
     public Result<Page<ProductVO>> listAll(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         return Result.success(mobileProductService.listAll(pageNum, pageSize));
+=======
+    @Resource
+    private JwtUtil jwtUtil;
+    @Resource
+    private ProductCommentService productCommentService;
+    @Resource
+    private ProductLikeService productLikeService;
+
+    /**
+     * 首页全部商品（支持 tab 筛选）
+     * sort=hot    → 按销量降序（热销）
+     * sort=new    → 按创建时间降序（新品）
+     * sort=figure → firstCategoryId=1，手办分类
+     * sort=goods  → firstCategoryId=2，周边分类
+     * 不传 sort   → 默认按 sort 字段降序
+     */
+    @GetMapping("/list")
+    public Result<Page<ProductVO>> listAll(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Long firstCategoryId) {
+        Page<ProductVO> productPage = mobileProductService.listAllWithFilter(pageNum, pageSize, sort, firstCategoryId);
+        return Result.success(productPage);
+>>>>>>> master
     }
 
     @GetMapping("/first-category/{firstCategoryId}")
