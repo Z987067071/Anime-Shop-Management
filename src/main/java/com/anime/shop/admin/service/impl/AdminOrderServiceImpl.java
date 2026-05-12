@@ -43,18 +43,22 @@ public class AdminOrderServiceImpl extends ServiceImpl<OrderEntityMapper, OrderE
         // 1. 原有分页查询（查订单主表）
         IPage<OrderEntity> orderPage = baseMapper.selectOrderPage(page, query);
 
-        // 2. 遍历订单，补充productType（核心修改）
+        // 2. 遍历订单，补充productType和ticketRelations
         if (!orderPage.getRecords().isEmpty()) {
             for (OrderEntity order : orderPage.getRecords()) {
                 // 查询当前订单的订单项
                 List<OrderItemEntity> orderItems = orderItemEntityMapper.selectByOrderId(order.getId());
                 if (!orderItems.isEmpty()) {
-                    // 取第一个商品的productType（漫展票订单通常只有一个票务商品）
                     Long productId = orderItems.get(0).getProductId();
                     ProductEntity product = productMapper.selectById(productId);
                     if (product != null) {
                         order.setProductType(product.getProductType());
                     }
+                }
+                // 票务订单补充核销关联信息
+                if (order.getOrderType() != null && order.getOrderType() == 1) {
+                    List<OrderTicketRelationEntity> ticketRelations = orderTicketRelationMapper.selectByOrderId(order.getId());
+                    order.setTicketRelations(ticketRelations);
                 }
             }
         }
@@ -124,19 +128,12 @@ public class AdminOrderServiceImpl extends ServiceImpl<OrderEntityMapper, OrderE
 
             List<OrderItemEntity> items = orderItemEntityMapper.selectByOrderId(order.getId());
             for (OrderItemEntity item : items) {
-                // 1. 回滚销量
-                ProductEntity product = productMapper.selectById(item.getProductId());
-                if (product != null) {
-                    int oldSales = product.getSales() == null ? 0 : product.getSales();
-                    int realSales = Math.max(0, oldSales - item.getQuantity());
-                    product.setSales(realSales);
+                LambdaUpdateWrapper<ProductEntity> restoreWrapper = new LambdaUpdateWrapper<>();
+                restoreWrapper.eq(ProductEntity::getId, item.getProductId())
+                        .setSql("remain_stock = remain_stock + " + item.getQuantity()
+                                + ", sales = GREATEST(0, sales - " + item.getQuantity() + ")");
+                productMapper.update(null, restoreWrapper);
 
-                    // 2. 使用最新字段 remainStock 回滚库存
-                    product.setRemainStock(product.getRemainStock() + item.getQuantity());
-                    productMapper.updateById(product);
-                }
-
-                // 3. 同步回滚 票种库存（comic_con_ticket.stock）
                 if (item.getSkuId() != null) {
                     LambdaUpdateWrapper<ComicConTicket> ticketWrapper = new LambdaUpdateWrapper<>();
                     ticketWrapper.eq(ComicConTicket::getSkuId, item.getSkuId())

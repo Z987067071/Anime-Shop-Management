@@ -39,4 +39,6 @@ public class OrderEntity {
     private Integer orderType; // 订单类型 0=普通商品订单 1=漫展票务订单
     @TableField(exist = false)
     private Integer productType;
+    @TableField(exist = false)
+    private java.util.List<com.anime.shop.entity.OrderTicketRelationEntity> ticketRelations;
 }

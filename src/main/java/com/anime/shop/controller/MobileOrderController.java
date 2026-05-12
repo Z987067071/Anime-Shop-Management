@@ -32,9 +32,9 @@ public class MobileOrderController {
                 submitDTO.setBuyerList(null);
             } else if (submitDTO.getIsTicket() == 1) {
                 validatorUtil.validate(submitDTO, OrderSubmitDTO.TicketOrderGroup.class);
-                submitDTO.setConsignee("");
-                submitDTO.setConsigneePhone("");
-                submitDTO.setConsigneeAddress("");
+                submitDTO.setConsignee("");        // 票务订单无收货人
+                submitDTO.setConsigneeAddress(""); // 票务订单无收货地址
+                // consigneePhone 保留，作为联系手机号存入订单
             } else {
                 return Result.fail("票务订单标识只能是0或1");
             }
